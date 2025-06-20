@@ -6,6 +6,7 @@ const config = getDefaultConfig(__dirname);
 config.resolver.alias = {
   ...config.resolver.alias,
   'react-native-maps': require.resolve('./metro-shims/react-native-maps-mock.js'),
+  'react-native/Libraries/Utilities/codegenNativeCommands': require.resolve('./metro-shims/codegenNativeCommands.js'),
 };
 
 // Ensure web platform is properly configured
