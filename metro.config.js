@@ -2,12 +2,13 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-// Configure resolver to provide web-compatible shims for native-only modules
+// Add resolver alias for react-native-maps on web
 config.resolver.alias = {
-  'react-native/Libraries/Utilities/codegenNativeCommands': require.resolve('./metro-shims/codegenNativeCommands.js'),
+  ...config.resolver.alias,
+  'react-native-maps': require.resolve('./metro-shims/react-native-maps-mock.js'),
 };
 
-// Ensure the resolver can find the shim files
-config.resolver.platforms = ['ios', 'android', 'native', 'web'];
+// Ensure web platform is properly configured
+config.resolver.platforms = ['web', 'ios', 'android', 'native'];
 
 module.exports = config;
