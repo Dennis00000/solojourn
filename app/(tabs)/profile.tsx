@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,18 @@ import {
   TouchableOpacity,
   Image,
   Platform,
-  StatusBar,
+  Alert,
+  Modal,
+  TextInput,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '@/hooks/useAuth';
+import { storageService } from '@/utils/storage';
 
 interface TravelLog {
   id: string;
@@ -75,8 +82,45 @@ const achievements = [
 ];
 
 export default function ProfileScreen() {
+  const { signOut } = useAuth();
   const [selectedTab, setSelectedTab] = useState<'posts' | 'saved' | 'itineraries'>('posts');
   const [travelLogs, setTravelLogs] = useState<TravelLog[]>(mockTravelLogs);
+  const [editProfileVisible, setEditProfileVisible] = useState(false);
+  const [userProfile, setUserProfile] = useState({
+    name: 'Emma Chen',
+    bio: 'Solo traveler exploring the world one city at a time 📍 Digital nomad sharing authentic travel experiences and safety tips for fellow solo adventurers ✈️',
+    location: 'Currently in Tokyo, Japan',
+    email: 'emma@example.com',
+  });
+  const [editedProfile, setEditedProfile] = useState(userProfile);
+
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      const profile = await storageService.getUserProfile();
+      if (profile) {
+        setUserProfile(profile);
+        setEditedProfile(profile);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
+
+  const saveUserProfile = async () => {
+    try {
+      await storageService.setUserProfile(editedProfile);
+      setUserProfile(editedProfile);
+      setEditProfileVisible(false);
+      Alert.alert('Success', 'Profile updated successfully');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      Alert.alert('Error', 'Failed to update profile');
+    }
+  };
 
   const handleLike = (logId: string) => {
     setTravelLogs(logs => logs.map(log => 
@@ -88,6 +132,28 @@ export default function ProfileScreen() {
           }
         : log
     ));
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/auth');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const TravelLogCard = ({ log }: { log: TravelLog }) => (
@@ -149,28 +215,50 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Profile</Text>
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.headerButton}>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => setEditProfileVisible(true)}
+            >
               <Ionicons name="pencil" size={20} color="#374151" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerButton}>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => router.push('/screens/settings')}
+            >
               <Ionicons name="settings-outline" size={20} color="#374151" />
             </TouchableOpacity>
           </View>
         </View>
       </SafeAreaView>
+
       {/* Scrollable Content */}
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.profileLinksRow}>
-          <TouchableOpacity style={styles.profileLinkButton} onPress={() => router.push('/screens/settings')}>
-            <Ionicons name="settings-outline" size={20} color="#0EA5E9" style={{ marginRight: 8 }} />
-            <Text style={styles.profileLinkText}>Settings</Text>
+        {/* Quick Actions */}
+        <View style={styles.quickActionsContainer}>
+          <TouchableOpacity 
+            style={styles.quickActionButton} 
+            onPress={() => router.push('/screens/settings')}
+          >
+            <Ionicons name="settings-outline" size={20} color="#0EA5E9" />
+            <Text style={styles.quickActionText}>Settings</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.profileLinkButton} onPress={() => router.push('/screens/itineraries')}>
-            <Ionicons name="calendar-outline" size={20} color="#0EA5E9" style={{ marginRight: 8 }} />
-            <Text style={styles.profileLinkText}>Itineraries</Text>
+          <TouchableOpacity 
+            style={styles.quickActionButton} 
+            onPress={() => router.push('/screens/itineraries')}
+          >
+            <Ionicons name="calendar-outline" size={20} color="#0EA5E9" />
+            <Text style={styles.quickActionText}>Itineraries</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.quickActionButton} 
+            onPress={() => router.push('/premium')}
+          >
+            <Ionicons name="trophy-outline" size={20} color="#FFD700" />
+            <Text style={styles.quickActionText}>Premium</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Profile Section */}
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <Image 
@@ -182,20 +270,13 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
           
-          <TouchableOpacity style={styles.editProfileButton}>
-            <Ionicons name="create-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.editProfileButtonText}>Edit Profile</Text>
-          </TouchableOpacity>
-          
-          <Text style={styles.userName}>Emma Chen</Text>
+          <Text style={styles.userName}>{userProfile.name}</Text>
           <View style={styles.locationContainer}>
             <Ionicons name="location" size={16} color="#64748B" />
-            <Text style={styles.currentLocation}>Currently in Tokyo, Japan</Text>
+            <Text style={styles.currentLocation}>{userProfile.location}</Text>
           </View>
           
-          <Text style={styles.userBio}>
-            Solo traveler exploring the world one city at a time 📍 Digital nomad sharing authentic travel experiences and safety tips for fellow solo adventurers ✈️
-          </Text>
+          <Text style={styles.userBio}>{userProfile.bio}</Text>
 
           {/* Stats */}
           <View style={styles.statsContainer}>
@@ -222,12 +303,15 @@ export default function ProfileScreen() {
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.primaryButton}>
+            <TouchableOpacity 
+              style={styles.primaryButton}
+              onPress={() => setEditProfileVisible(true)}
+            >
               <Text style={styles.primaryButtonText}>Edit Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryButton}>
-              <Ionicons name="chatbubble" size={18} color="#0EA5E9" />
-              <Text style={styles.secondaryButtonText}>Message</Text>
+            <TouchableOpacity style={styles.secondaryButton} onPress={handleSignOut}>
+              <Ionicons name="log-out-outline" size={18} color="#EF4444" />
+              <Text style={styles.signOutButtonText}>Sign Out</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -302,10 +386,77 @@ export default function ProfileScreen() {
               <Text style={styles.emptyStateDescription}>
                 Create and share your travel plans with the community
               </Text>
+              <TouchableOpacity 
+                style={styles.createButton}
+                onPress={() => router.push('/screens/itineraries')}
+              >
+                <Text style={styles.createButtonText}>Create Itinerary</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
       </ScrollView>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={editProfileVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditProfileVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setEditProfileVisible(false)} />
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Edit Profile</Text>
+          
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Name</Text>
+            <TextInput
+              style={styles.input}
+              value={editedProfile.name}
+              onChangeText={(text) => setEditedProfile(prev => ({ ...prev, name: text }))}
+              placeholder="Your name"
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Bio</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={editedProfile.bio}
+              onChangeText={(text) => setEditedProfile(prev => ({ ...prev, bio: text }))}
+              placeholder="Tell us about yourself"
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={4}
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Location</Text>
+            <TextInput
+              style={styles.input}
+              value={editedProfile.location}
+              onChangeText={(text) => setEditedProfile(prev => ({ ...prev, location: text }))}
+              placeholder="Where are you now?"
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
+
+          <TouchableOpacity style={styles.modalButton} onPress={saveUserProfile}>
+            <LinearGradient colors={['#0EA5E9', '#0284C7']} style={styles.modalButtonGradient}>
+              <Text style={styles.modalButtonText}>Save Changes</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.modalCancelButton} 
+            onPress={() => setEditProfileVisible(false)}
+          >
+            <Text style={styles.modalCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -338,8 +489,31 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: 8,
   },
-  content: {
-    flex: 1,
+  quickActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  quickActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    gap: 8,
+  },
+  quickActionText: {
+    fontSize: 14,
+    color: '#0EA5E9',
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-SemiBold',
   },
   profileSection: {
     backgroundColor: '#FFFFFF',
@@ -348,6 +522,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   profileImageContainer: {
     position: 'relative',
@@ -449,12 +631,12 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#0EA5E9',
+    borderColor: '#EF4444',
     paddingVertical: 12,
     borderRadius: 12,
   },
-  secondaryButtonText: {
-    color: '#0EA5E9',
+  signOutButtonText: {
+    color: '#EF4444',
     fontSize: 16,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Regular',
@@ -482,6 +664,11 @@ const styles = StyleSheet.create({
     width: 100,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   achievementCardDisabled: {
     opacity: 0.5,
@@ -544,6 +731,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   travelLogImage: {
     width: '100%',
@@ -630,44 +822,20 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 16,
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Regular',
   },
-  editProfileButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 24,
-    paddingVertical: 10,
+  createButton: {
+    backgroundColor: '#0EA5E9',
     paddingHorizontal: 24,
-    marginBottom: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
-  editProfileButtonText: {
-    color: '#fff',
+  createButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Regular',
-  },
-  profileLinksRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  profileLinkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    marginHorizontal: 8,
-  },
-  profileLinkText: {
-    fontSize: 15,
-    color: '#0EA5E9',
-    fontWeight: '600',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-SemiBold',
   },
   fixedHeader: {
     position: 'absolute',
@@ -680,7 +848,83 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E2E8F0',
   },
   scrollContent: {
-    marginTop: 72, // height of header
+    marginTop: 72,
     flex: 1,
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    position: 'absolute',
+    top: '15%',
+    left: 20,
+    right: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Bold',
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-SemiBold',
+  },
+  input: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#1F2937',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Regular',
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  modalButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  modalButtonGradient: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-SemiBold',
+  },
+  modalCancelButton: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  modalCancelText: {
+    color: '#64748B',
+    fontSize: 16,
+    fontWeight: '500',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Medium',
   },
 });
