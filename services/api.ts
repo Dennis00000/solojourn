@@ -2,6 +2,66 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiResponse, PaginatedResponse } from '../types';
 
+// Mock data for development
+const mockUsers = [
+  { id: '1', name: 'John Doe', email: 'john@example.com', avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150' },
+  { id: '2', name: 'Jane Smith', email: 'jane@example.com', avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150' },
+];
+
+const mockPosts = [
+  {
+    id: '1',
+    title: 'Amazing Solo Trip to Japan',
+    content: 'Just finished an incredible solo journey through Japan. The culture, food, and people were absolutely amazing!',
+    author: mockUsers[0],
+    createdAt: new Date().toISOString(),
+    likes: 24,
+    comments: 5,
+    isLiked: false,
+    isBookmarked: false,
+    images: ['https://images.pexels.com/photos/161401/fushimi-inari-taisha-shrine-kyoto-japan-161401.jpeg?auto=compress&cs=tinysrgb&w=800']
+  },
+  {
+    id: '2',
+    title: 'Solo Backpacking in Europe',
+    content: 'Three weeks across 8 countries. Here are my top tips for solo female travelers in Europe.',
+    author: mockUsers[1],
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    likes: 18,
+    comments: 3,
+    isLiked: true,
+    isBookmarked: true,
+    images: ['https://images.pexels.com/photos/1388030/pexels-photo-1388030.jpeg?auto=compress&cs=tinysrgb&w=800']
+  }
+];
+
+const mockComments = [
+  {
+    id: '1',
+    content: 'This looks amazing! Thanks for sharing your experience.',
+    author: mockUsers[1],
+    createdAt: new Date().toISOString(),
+    postId: '1'
+  }
+];
+
+const mockNotifications = [
+  {
+    id: '1',
+    type: 'like',
+    message: 'Jane Smith liked your post',
+    createdAt: new Date().toISOString(),
+    isRead: false
+  },
+  {
+    id: '2',
+    type: 'comment',
+    message: 'John Doe commented on your post',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+    isRead: true
+  }
+];
+
 const API_BASE_URL = Platform.select({
   web: 'http://localhost:3000/api',
   default: 'https://api.solojourn.com', // Replace with your actual API URL
@@ -10,6 +70,7 @@ const API_BASE_URL = Platform.select({
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
+  private useMockData: boolean = true; // Set to false when you have a real backend
 
   constructor() {
     this.baseURL = API_BASE_URL;
@@ -40,10 +101,136 @@ class ApiService {
     return headers;
   }
 
+  private async mockRequest<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    try {
+      // Mock different endpoints
+      if (endpoint.includes('/auth/login')) {
+        const mockToken = 'mock-jwt-token-' + Date.now();
+        const mockUser = mockUsers[0];
+        return {
+          success: true,
+          data: { token: mockToken, user: mockUser } as T
+        };
+      }
+
+      if (endpoint.includes('/auth/register')) {
+        const mockToken = 'mock-jwt-token-' + Date.now();
+        const mockUser = { ...mockUsers[0], name: 'New User' };
+        return {
+          success: true,
+          data: { token: mockToken, user: mockUser } as T
+        };
+      }
+
+      if (endpoint.includes('/users/profile')) {
+        return {
+          success: true,
+          data: mockUsers[0] as T
+        };
+      }
+
+      if (endpoint.includes('/posts') && !endpoint.includes('/comments')) {
+        const paginatedResponse: PaginatedResponse<any> = {
+          data: mockPosts,
+          pagination: {
+            page: 1,
+            limit: 10,
+            total: mockPosts.length,
+            totalPages: 1
+          }
+        };
+        return {
+          success: true,
+          data: paginatedResponse as T
+        };
+      }
+
+      if (endpoint.includes('/comments')) {
+        const paginatedResponse: PaginatedResponse<any> = {
+          data: mockComments,
+          pagination: {
+            page: 1,
+            limit: 10,
+            total: mockComments.length,
+            totalPages: 1
+          }
+        };
+        return {
+          success: true,
+          data: paginatedResponse as T
+        };
+      }
+
+      if (endpoint.includes('/notifications')) {
+        const paginatedResponse: PaginatedResponse<any> = {
+          data: mockNotifications,
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: mockNotifications.length,
+            totalPages: 1
+          }
+        };
+        return {
+          success: true,
+          data: paginatedResponse as T
+        };
+      }
+
+      if (endpoint.includes('/messages/conversations')) {
+        return {
+          success: true,
+          data: [] as T
+        };
+      }
+
+      if (endpoint.includes('/travel-plans')) {
+        return {
+          success: true,
+          data: [] as T
+        };
+      }
+
+      if (endpoint.includes('/pois')) {
+        return {
+          success: true,
+          data: { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } } as T
+        };
+      }
+
+      if (endpoint.includes('/safety')) {
+        return {
+          success: true,
+          data: [] as T
+        };
+      }
+
+      // Default success response for other endpoints
+      return {
+        success: true,
+        data: {} as T
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Mock API error'
+      };
+    }
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
+    // Use mock data if enabled or if we're on web platform (for development)
+    if (this.useMockData || Platform.OS === 'web') {
+      return this.mockRequest<T>(endpoint, options);
+    }
+
     try {
       const headers = await this.getHeaders();
       
@@ -283,6 +470,18 @@ class ApiService {
 
   // File upload
   async uploadFile(file: any, type: 'image' | 'audio' | 'document') {
+    if (this.useMockData || Platform.OS === 'web') {
+      // Mock file upload response
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return {
+        success: true,
+        data: {
+          url: 'https://images.pexels.com/photos/1388030/pexels-photo-1388030.jpeg?auto=compress&cs=tinysrgb&w=800',
+          filename: 'mock-upload.jpg'
+        }
+      };
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
@@ -305,6 +504,11 @@ class ApiService {
         error: error instanceof Error ? error.message : 'Upload failed',
       };
     }
+  }
+
+  // Method to switch between mock and real API
+  setUseMockData(useMock: boolean) {
+    this.useMockData = useMock;
   }
 }
 
