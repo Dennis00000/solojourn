@@ -121,6 +121,30 @@ const safetyTips: SafetyTip[] = [
     description: 'Use hotel safes, money belts, and avoid displaying expensive items. Keep backup copies of important documents.',
     category: 'money',
   },
+  {
+    id: '5',
+    title: 'Stay Connected',
+    description: 'Keep your phone charged and have backup power sources. Share your location with trusted contacts.',
+    category: 'communication',
+  },
+  {
+    id: '6',
+    title: 'Research Local Customs',
+    description: 'Understanding local customs and laws helps you avoid unintentional offense and stay safe.',
+    category: 'general',
+  },
+  {
+    id: '7',
+    title: 'Health Precautions',
+    description: 'Get necessary vaccinations, carry a first aid kit, and know where the nearest hospitals are located.',
+    category: 'health',
+  },
+  {
+    id: '8',
+    title: 'Money Safety',
+    description: 'Use multiple payment methods, keep cash in different places, and notify your bank of travel plans.',
+    category: 'money',
+  },
 ];
 
 const emergencyContacts: EmergencyContact[] = [
@@ -128,6 +152,8 @@ const emergencyContacts: EmergencyContact[] = [
   { country: 'Japan', police: '110', medical: '119', fire: '119' },
   { country: 'United Kingdom', police: '999', medical: '999', fire: '999' },
   { country: 'Australia', police: '000', medical: '000', fire: '000' },
+  { country: 'United States', police: '911', medical: '911', fire: '911' },
+  { country: 'Germany', police: '110', medical: '112', fire: '112' },
 ];
 
 const topTravelers = [
@@ -180,6 +206,10 @@ export default function DiscoverScreen() {
     const matchesCategory = selectedCategory === 'all' || poi.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const filteredSafetyTips = safetyTips.filter(tip => 
+    selectedSafetyCategory === 'all' || tip.category === selectedSafetyCategory
+  );
 
   const handleEmergencyCall = (number: string, country: string) => {
     Alert.alert(
@@ -273,8 +303,14 @@ export default function DiscoverScreen() {
 
   const SafetyTipCard = ({ tip }: { tip: SafetyTip }) => (
     <View style={styles.tipCard}>
-      <Text style={styles.tipTitle}>{tip.title}</Text>
+      <View style={styles.tipHeader}>
+        <Shield size={16} color="#EF4444" />
+        <Text style={styles.tipTitle}>{tip.title}</Text>
+      </View>
       <Text style={styles.tipDescription}>{tip.description}</Text>
+      <View style={styles.tipCategoryBadge}>
+        <Text style={styles.tipCategoryText}>{tip.category.toUpperCase()}</Text>
+      </View>
     </View>
   );
 
@@ -424,9 +460,10 @@ export default function DiscoverScreen() {
           })}
         </ScrollView>
 
-        {/* Safety Tips Section - Only show when safety category is selected */}
+        {/* Safety Content - Show when safety category is selected */}
         {selectedCategory === 'safety' && (
           <View style={styles.safetySection}>
+            {/* Safety Tips Filter */}
             <Text style={styles.sectionTitle}>Safety Tips</Text>
             <ScrollView 
               horizontal 
@@ -453,6 +490,12 @@ export default function DiscoverScreen() {
                 onPress={() => setSelectedSafetyCategory('general')}
               />
               <CategoryButton
+                title="Health"
+                icon={Heart}
+                isSelected={selectedSafetyCategory === 'health'}
+                onPress={() => setSelectedSafetyCategory('health')}
+              />
+              <CategoryButton
                 title="Money"
                 icon={FileText}
                 isSelected={selectedSafetyCategory === 'money'}
@@ -460,77 +503,82 @@ export default function DiscoverScreen() {
               />
             </ScrollView>
 
+            {/* Safety Tips List */}
             <View style={styles.tipsContainer}>
-              {safetyTips
-                .filter(tip => selectedSafetyCategory === 'all' || tip.category === selectedSafetyCategory)
-                .map((tip) => (
-                  <SafetyTipCard key={tip.id} tip={tip} />
-                ))}
+              {filteredSafetyTips.map((tip) => (
+                <SafetyTipCard key={tip.id} tip={tip} />
+              ))}
             </View>
 
             {/* Emergency Contacts */}
             <Text style={styles.sectionTitle}>Emergency Contacts</Text>
+            <Text style={styles.sectionSubtitle}>Quick access to emergency services worldwide</Text>
             {emergencyContacts.map((contact, index) => (
               <EmergencyContactCard key={index} contact={contact} />
             ))}
           </View>
         )}
 
-        {/* Interactive Map Placeholder */}
-        <View style={styles.mapSectionContainer}>
-          <Text style={styles.mapLabel}>🌍 Explore Locations</Text>
-          <Text style={styles.mapSubtext}>Discover places shared by fellow travelers</Text>
-          <View style={styles.mapPlaceholder}>
-            <MapPin size={48} color="#0EA5E9" />
-            <Text style={styles.mapPlaceholderText}>Interactive map coming soon</Text>
-            <Text style={styles.mapPlaceholderSubtext}>Browse locations below</Text>
-          </View>
-        </View>
-
-        {/* Top Travelers */}
-        <View style={{ marginTop: 24, marginBottom: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 }}>
-            <Text style={{ fontSize: 18, fontWeight: '700', color: '#0EA5E9' }}>Top Travelers</Text>
-            <Ionicons name="trending-up" size={16} color="#0EA5E9" />
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingLeft: 20, marginTop: 12 }}>
-            {topTravelers.map((traveler) => (
-              <View key={traveler.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginRight: 16, alignItems: 'center', width: 130, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
-                <View style={{ position: 'relative', marginBottom: 8 }}>
-                  <Image source={{ uri: traveler.avatar }} style={{ width: 50, height: 50, borderRadius: 25 }} />
-                  {traveler.isPremium && (
-                    <View style={{ position: 'absolute', top: -2, right: -2, backgroundColor: '#1F2937', borderRadius: 8, padding: 2, minWidth: 14, minHeight: 14, alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name="trophy-outline" size={8} color="#FFD700" />
-                    </View>
-                  )}
-                </View>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', textAlign: 'center', marginBottom: 4 }}>{traveler.name}</Text>
-                <View style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, marginBottom: 6 }}>
-                  <Text style={{ fontSize: 10, color: '#64748B', fontWeight: '500' }}>{traveler.badge}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 }}>
-                  <Ionicons name="star" size={12} color="#F59E0B" />
-                  <Text style={{ fontSize: 12, fontWeight: '500', color: '#F59E0B' }}>{traveler.rating}</Text>
-                </View>
-                <Text style={{ fontSize: 11, color: '#64748B', textAlign: 'center' }}>{traveler.countries} countries</Text>
+        {/* Show other content when not in safety mode */}
+        {selectedCategory !== 'safety' && (
+          <>
+            {/* Interactive Map Placeholder */}
+            <View style={styles.mapSectionContainer}>
+              <Text style={styles.mapLabel}>🌍 Explore Locations</Text>
+              <Text style={styles.mapSubtext}>Discover places shared by fellow travelers</Text>
+              <View style={styles.mapPlaceholder}>
+                <MapPin size={48} color="#0EA5E9" />
+                <Text style={styles.mapPlaceholderText}>Interactive map coming soon</Text>
+                <Text style={styles.mapPlaceholderSubtext}>Browse locations below</Text>
               </View>
-            ))}
-          </ScrollView>
-        </View>
+            </View>
 
-        {/* POI List */}
-        <ScrollView style={styles.poiList} showsVerticalScrollIndicator={false}>
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>
-              {selectedCategory === 'all' ? 'All Places' : categories.find(c => c.id === selectedCategory)?.name}
-            </Text>
-            <Text style={styles.resultCount}>{filteredPOIs.length} results</Text>
-          </View>
-          
-          {filteredPOIs.map((poi) => (
-            <POICard key={poi.id} poi={poi} />
-          ))}
-        </ScrollView>
+            {/* Top Travelers */}
+            <View style={{ marginTop: 24, marginBottom: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 }}>
+                <Text style={{ fontSize: 18, fontWeight: '700', color: '#0EA5E9' }}>Top Travelers</Text>
+                <Ionicons name="trending-up" size={16} color="#0EA5E9" />
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ paddingLeft: 20, marginTop: 12 }}>
+                {topTravelers.map((traveler) => (
+                  <View key={traveler.id} style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginRight: 16, alignItems: 'center', width: 130, borderWidth: 1, borderColor: '#E2E8F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
+                    <View style={{ position: 'relative', marginBottom: 8 }}>
+                      <Image source={{ uri: traveler.avatar }} style={{ width: 50, height: 50, borderRadius: 25 }} />
+                      {traveler.isPremium && (
+                        <View style={{ position: 'absolute', top: -2, right: -2, backgroundColor: '#1F2937', borderRadius: 8, padding: 2, minWidth: 14, minHeight: 14, alignItems: 'center', justifyContent: 'center' }}>
+                          <Ionicons name="trophy-outline" size={8} color="#FFD700" />
+                        </View>
+                      )}
+                    </View>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', textAlign: 'center', marginBottom: 4 }}>{traveler.name}</Text>
+                    <View style={{ backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, marginBottom: 6 }}>
+                      <Text style={{ fontSize: 10, color: '#64748B', fontWeight: '500' }}>{traveler.badge}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                      <Ionicons name="star" size={12} color="#F59E0B" />
+                      <Text style={{ fontSize: 12, fontWeight: '500', color: '#F59E0B' }}>{traveler.rating}</Text>
+                    </View>
+                    <Text style={{ fontSize: 11, color: '#64748B', textAlign: 'center' }}>{traveler.countries} countries</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* POI List */}
+            <ScrollView style={styles.poiList} showsVerticalScrollIndicator={false}>
+              <View style={styles.listHeader}>
+                <Text style={styles.listTitle}>
+                  {selectedCategory === 'all' ? 'All Places' : categories.find(c => c.id === selectedCategory)?.name}
+                </Text>
+                <Text style={styles.resultCount}>{filteredPOIs.length} results</Text>
+              </View>
+              
+              {filteredPOIs.map((poi) => (
+                <POICard key={poi.id} poi={poi} />
+              ))}
+            </ScrollView>
+          </>
+        )}
       </ScrollView>
     </SafeAreaViewRN>
   );
@@ -604,6 +652,12 @@ const styles = StyleSheet.create({
     color: '#1F2937',
     marginBottom: 12,
   },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    marginBottom: 16,
+    marginTop: -8,
+  },
   quickActions: {
     flexDirection: 'row',
     gap: 12,
@@ -669,7 +723,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   tipsContainer: {
-    marginBottom: 20,
+    marginBottom: 32,
   },
   tipCard: {
     backgroundColor: '#FFFFFF',
@@ -683,17 +737,38 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#EF4444',
+  },
+  tipHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
   },
   tipTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 8,
+    flex: 1,
   },
   tipDescription: {
     fontSize: 14,
     lineHeight: 20,
     color: '#64748B',
+    marginBottom: 8,
+  },
+  tipCategoryBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  tipCategoryText: {
+    fontSize: 10,
+    color: '#EF4444',
+    fontWeight: '600',
   },
   emergencyCard: {
     backgroundColor: '#FFFFFF',
