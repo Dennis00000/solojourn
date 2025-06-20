@@ -144,7 +144,7 @@ const stories = [
   },
 ];
 
-// Add state for demo user
+// Demo users data
 const demoUsers = [
   {
     name: 'Emma Chen',
@@ -159,7 +159,6 @@ const demoUsers = [
     avatar: 'https://images.pexels.com/photos/1310522/pexels-photo-1310522.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&dpr=2',
   },
 ];
-const [currentUser, setCurrentUser] = useState(demoUsers[0]);
 
 export default function FeedScreen() {
   const { width } = useWindowDimensions();
@@ -189,6 +188,7 @@ export default function FeedScreen() {
   const [viewedStories, setViewedStories] = useState<{ [id: string]: boolean }>({});
   const [storyProgress, setStoryProgress] = useState(0);
   const storyTimerRef = useRef<any>(null);
+  const [currentUser, setCurrentUser] = useState(demoUsers[0]);
 
   const handleLike = (postId: string) => {
     setPosts(posts.map(post => 
