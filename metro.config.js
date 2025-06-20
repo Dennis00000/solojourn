@@ -7,4 +7,7 @@ config.resolver.extraNodeModules = {
   'react-native/Libraries/Utilities/codegenNativeCommands': require.resolve('./metro-shims/codegenNativeCommands.js'),
 };
 
+// Ensure the resolver can find the shim files
+config.resolver.platforms = ['ios', 'android', 'native', 'web'];
+
 module.exports = config;
