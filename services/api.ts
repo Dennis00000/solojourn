@@ -4,8 +4,34 @@ import { ApiResponse, PaginatedResponse } from '../types';
 
 // Mock data for development
 const mockUsers = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150' },
+  { 
+    id: '1', 
+    name: 'John Doe', 
+    email: 'john@example.com', 
+    avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
+    isVerified: true,
+    isPremium: false,
+    followers: 1250,
+    preferences: {
+      notifications: true,
+      privacy: 'public',
+      language: 'en'
+    }
+  },
+  { 
+    id: '2', 
+    name: 'Jane Smith', 
+    email: 'jane@example.com', 
+    avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150',
+    isVerified: false,
+    isPremium: true,
+    followers: 890,
+    preferences: {
+      notifications: true,
+      privacy: 'public',
+      language: 'en'
+    }
+  },
 ];
 
 const mockPosts = [
