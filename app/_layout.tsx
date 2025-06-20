@@ -19,12 +19,18 @@ import {
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ErrorBoundary from '@/components/common/ErrorBoundary';
+import { useSocket } from '@/hooks/useSocket';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+function AppContent() {
   useFrameworkReady();
   const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  // Initialize socket connection
+  useSocket();
 
   const [fontsLoaded, fontError] = useFonts({
     'Inter-Regular': Inter_400Regular,
@@ -38,51 +44,65 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    const checkFirstLaunch = async () => {
+    const checkAppState = async () => {
       try {
-        const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+        const [hasLaunched, userToken] = await Promise.all([
+          AsyncStorage.getItem('hasLaunched'),
+          AsyncStorage.getItem('userToken'),
+        ]);
+        
         setIsFirstLaunch(hasLaunched === null);
+        setIsAuthenticated(userToken !== null);
       } catch (error) {
+        console.error('Error checking app state:', error);
         setIsFirstLaunch(true);
+        setIsAuthenticated(false);
       }
     };
 
-    checkFirstLaunch();
+    checkAppState();
   }, []);
 
   useEffect(() => {
-    if ((fontsLoaded || fontError) && isFirstLaunch !== null) {
+    if ((fontsLoaded || fontError) && isFirstLaunch !== null && isAuthenticated !== null) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError, isFirstLaunch]);
+  }, [fontsLoaded, fontError, isFirstLaunch, isAuthenticated]);
 
   if (!fontsLoaded && !fontError) {
     return null;
   }
 
-  if (isFirstLaunch === null) {
+  if (isFirstLaunch === null || isAuthenticated === null) {
     return null;
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <>
-        <Stack screenOptions={{ headerShown: false }}>
-          {isFirstLaunch ? (
-            <>
-              <Stack.Screen name="splash" options={{ headerShown: false }} />
-              <Stack.Screen name="auth" options={{ headerShown: false }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </>
-          ) : (
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          )}
-          <Stack.Screen name="premium" options={{ headerShown: false }} />
-          <Stack.Screen name="notifications" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
+    <Stack screenOptions={{ headerShown: false }}>
+      {isFirstLaunch ? (
+        <>
+          <Stack.Screen name="splash" options={{ headerShown: false }} />
+          <Stack.Screen name="auth" options={{ headerShown: false }} />
+        </>
+      ) : !isAuthenticated ? (
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+      ) : null}
+      
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="premium" options={{ headerShown: false }} />
+      <Stack.Screen name="notifications" options={{ headerShown: false }} />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <AppContent />
         <StatusBar style="auto" />
-      </>
-    </GestureHandlerRootView>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
