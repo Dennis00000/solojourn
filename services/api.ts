@@ -12,10 +12,30 @@ const mockUsers = [
     isVerified: true,
     isPremium: false,
     followers: 1250,
+    following: 890,
+    countriesVisited: 15,
+    rating: 4.8,
+    joinedAt: new Date().toISOString(),
+    lastSeen: new Date().toISOString(),
+    isOnline: true,
     preferences: {
-      notifications: true,
-      privacy: 'public',
-      language: 'en'
+      notifications: {
+        push: true,
+        email: true,
+        messages: true,
+        likes: true,
+        comments: true,
+        follows: true,
+      },
+      privacy: {
+        showLocation: true,
+        showOnlineStatus: true,
+        allowMessages: 'everyone' as const,
+      },
+      safety: {
+        shareLocation: false,
+        emergencyContacts: [],
+      },
     }
   },
   { 
@@ -26,10 +46,30 @@ const mockUsers = [
     isVerified: false,
     isPremium: true,
     followers: 890,
+    following: 1200,
+    countriesVisited: 23,
+    rating: 4.9,
+    joinedAt: new Date().toISOString(),
+    lastSeen: new Date().toISOString(),
+    isOnline: false,
     preferences: {
-      notifications: true,
-      privacy: 'public',
-      language: 'en'
+      notifications: {
+        push: true,
+        email: false,
+        messages: true,
+        likes: false,
+        comments: true,
+        follows: true,
+      },
+      privacy: {
+        showLocation: false,
+        showOnlineStatus: false,
+        allowMessages: 'followers' as const,
+      },
+      safety: {
+        shareLocation: true,
+        emergencyContacts: ['emergency@example.com'],
+      },
     }
   },
 ];
@@ -37,61 +77,89 @@ const mockUsers = [
 const mockPosts = [
   {
     id: '1',
-    title: 'Amazing Solo Trip to Japan',
-    content: 'Just finished an incredible solo journey through Japan. The culture, food, and people were absolutely amazing!',
+    userId: '1',
     user: mockUsers[0],
-    createdAt: new Date().toISOString(),
-    likes: 24,
-    comments: 5,
+    content: 'Just finished an incredible solo journey through Japan. The culture, food, and people were absolutely amazing! 🇯🇵',
+    images: ['https://images.pexels.com/photos/161401/fushimi-inari-taisha-shrine-kyoto-japan-161401.jpeg?auto=compress&cs=tinysrgb&w=800'],
+    location: {
+      name: 'Tokyo, Japan',
+      coordinates: { latitude: 35.6762, longitude: 139.6503 }
+    },
+    tags: ['japan', 'solo-travel', 'culture', 'food'],
+    likes: 124,
+    comments: 15,
+    shares: 8,
     isLiked: false,
     isBookmarked: false,
-    images: ['https://images.pexels.com/photos/161401/fushimi-inari-taisha-shrine-kyoto-japan-161401.jpeg?auto=compress&cs=tinysrgb&w=800']
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    type: 'image' as const,
   },
   {
     id: '2',
-    title: 'Solo Backpacking in Europe',
-    content: 'Three weeks across 8 countries. Here are my top tips for solo female travelers in Europe.',
+    userId: '2',
     user: mockUsers[1],
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    likes: 18,
-    comments: 3,
+    content: 'Three weeks across 8 countries in Europe. Here are my top safety tips for solo female travelers! 💪',
+    images: ['https://images.pexels.com/photos/1388030/pexels-photo-1388030.jpeg?auto=compress&cs=tinysrgb&w=800'],
+    location: {
+      name: 'Barcelona, Spain',
+      coordinates: { latitude: 41.3851, longitude: 2.1734 }
+    },
+    tags: ['europe', 'safety', 'female-travel', 'tips'],
+    likes: 89,
+    comments: 23,
+    shares: 12,
     isLiked: true,
     isBookmarked: true,
-    images: ['https://images.pexels.com/photos/1388030/pexels-photo-1388030.jpeg?auto=compress&cs=tinysrgb&w=800']
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+    type: 'tip' as const,
   }
 ];
 
 const mockComments = [
   {
     id: '1',
+    postId: '1',
+    userId: '2',
+    user: mockUsers[1],
     content: 'This looks amazing! Thanks for sharing your experience.',
-    author: mockUsers[1],
+    likes: 5,
+    isLiked: false,
     createdAt: new Date().toISOString(),
-    postId: '1'
+    replies: []
   }
 ];
 
 const mockNotifications = [
   {
     id: '1',
-    type: 'like',
+    userId: '1',
+    type: 'like' as const,
+    title: 'New Like',
     message: 'Jane Smith liked your post',
+    data: { postId: '1', userId: '2' },
+    isRead: false,
     createdAt: new Date().toISOString(),
-    isRead: false
+    actionUser: mockUsers[1]
   },
   {
     id: '2',
-    type: 'comment',
+    userId: '1',
+    type: 'comment' as const,
+    title: 'New Comment',
     message: 'John Doe commented on your post',
+    data: { postId: '1', commentId: '1', userId: '1' },
+    isRead: true,
     createdAt: new Date(Date.now() - 3600000).toISOString(),
-    isRead: true
+    actionUser: mockUsers[0]
   }
 ];
 
-const API_BASE_URL = Platform.select({
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || (Platform.select({
   web: 'http://localhost:3000/api',
-  default: 'https://api.solojourn.com', // Replace with your actual API URL
-});
+  default: 'https://api.solojourn.com',
+}));
 
 class ApiService {
   private baseURL: string;
@@ -129,7 +197,7 @@ class ApiService {
 
   private async mockRequest<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
 
     try {
       // Mock different endpoints
@@ -159,13 +227,40 @@ class ApiService {
       }
 
       if (endpoint.includes('/posts') && !endpoint.includes('/comments')) {
+        if (options.method === 'POST') {
+          const body = JSON.parse(options.body as string);
+          const newPost = {
+            id: Date.now().toString(),
+            userId: '1',
+            user: mockUsers[0],
+            content: body.content,
+            images: body.images || [],
+            location: body.location,
+            tags: body.tags || [],
+            likes: 0,
+            comments: 0,
+            shares: 0,
+            isLiked: false,
+            isBookmarked: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            type: body.type || 'text',
+          };
+          return {
+            success: true,
+            data: newPost as T
+          };
+        }
+
         const paginatedResponse: PaginatedResponse<any> = {
           data: mockPosts,
           pagination: {
             page: 1,
             limit: 10,
             total: mockPosts.length,
-            totalPages: 1
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
           }
         };
         return {
@@ -181,7 +276,9 @@ class ApiService {
             page: 1,
             limit: 10,
             total: mockComments.length,
-            totalPages: 1
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
           }
         };
         return {
@@ -197,7 +294,9 @@ class ApiService {
             page: 1,
             limit: 20,
             total: mockNotifications.length,
-            totalPages: 1
+            totalPages: 1,
+            hasNext: false,
+            hasPrev: false,
           }
         };
         return {
@@ -223,7 +322,7 @@ class ApiService {
       if (endpoint.includes('/pois')) {
         return {
           success: true,
-          data: { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0 } } as T
+          data: { data: [], pagination: { page: 1, limit: 10, total: 0, totalPages: 0, hasNext: false, hasPrev: false } } as T
         };
       }
 

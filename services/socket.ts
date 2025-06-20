@@ -3,9 +3,9 @@ import { io, Socket } from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Message, Notification, User } from '../types';
 
-const SOCKET_URL = Platform.select({
+const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || Platform.select({
   web: 'http://localhost:3000',
-  default: 'https://api.solojourn.com', // Replace with your actual socket URL
+  default: 'https://api.solojourn.com',
 });
 
 class SocketService {
@@ -14,8 +14,15 @@ class SocketService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private listeners: Map<string, Function[]> = new Map();
+  private useMockMode = true; // Set to false when you have a real socket server
 
   async connect() {
+    if (this.useMockMode) {
+      console.log('Socket service running in mock mode');
+      this.simulateConnection();
+      return;
+    }
+
     try {
       const token = await AsyncStorage.getItem('userToken');
       if (!token) {
@@ -36,6 +43,14 @@ class SocketService {
     } catch (error) {
       console.error('Socket connection error:', error);
     }
+  }
+
+  private simulateConnection() {
+    // Simulate successful connection in mock mode
+    setTimeout(() => {
+      this.isConnected = true;
+      this.emit('socket:connected');
+    }, 1000);
   }
 
   private setupEventListeners() {
@@ -131,8 +146,8 @@ class SocketService {
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
-      this.isConnected = false;
     }
+    this.isConnected = false;
   }
 
   // Event emitter methods
@@ -163,50 +178,90 @@ class SocketService {
     }
   }
 
-  // Socket actions
+  // Socket actions (mock implementations)
   joinConversation(conversationId: string) {
+    if (this.useMockMode) {
+      console.log(`Mock: Joined conversation ${conversationId}`);
+      return;
+    }
+    
     if (this.socket && this.isConnected) {
       this.socket.emit('conversation:join', conversationId);
     }
   }
 
   leaveConversation(conversationId: string) {
+    if (this.useMockMode) {
+      console.log(`Mock: Left conversation ${conversationId}`);
+      return;
+    }
+    
     if (this.socket && this.isConnected) {
       this.socket.emit('conversation:leave', conversationId);
     }
   }
 
   sendMessage(conversationId: string, message: any) {
+    if (this.useMockMode) {
+      console.log(`Mock: Sent message to conversation ${conversationId}`, message);
+      return;
+    }
+    
     if (this.socket && this.isConnected) {
       this.socket.emit('message:send', { conversationId, ...message });
     }
   }
 
   markMessageAsRead(messageId: string) {
+    if (this.useMockMode) {
+      console.log(`Mock: Marked message ${messageId} as read`);
+      return;
+    }
+    
     if (this.socket && this.isConnected) {
       this.socket.emit('message:read', messageId);
     }
   }
 
   setTyping(conversationId: string, isTyping: boolean) {
+    if (this.useMockMode) {
+      console.log(`Mock: Set typing ${isTyping} for conversation ${conversationId}`);
+      return;
+    }
+    
     if (this.socket && this.isConnected) {
       this.socket.emit('message:typing', { conversationId, isTyping });
     }
   }
 
   shareLocation(location: { latitude: number; longitude: number }) {
+    if (this.useMockMode) {
+      console.log('Mock: Shared location', location);
+      return;
+    }
+    
     if (this.socket && this.isConnected) {
       this.socket.emit('location:share', location);
     }
   }
 
   sendSafetyAlert(alert: any) {
+    if (this.useMockMode) {
+      console.log('Mock: Sent safety alert', alert);
+      return;
+    }
+    
     if (this.socket && this.isConnected) {
       this.socket.emit('safety:alert', alert);
     }
   }
 
   updatePresence(status: 'online' | 'away' | 'offline') {
+    if (this.useMockMode) {
+      console.log(`Mock: Updated presence to ${status}`);
+      return;
+    }
+    
     if (this.socket && this.isConnected) {
       this.socket.emit('user:presence', status);
     }
@@ -218,7 +273,12 @@ class SocketService {
   }
 
   get socketId() {
-    return this.socket?.id;
+    return this.socket?.id || 'mock-socket-id';
+  }
+
+  // Method to switch between mock and real socket
+  setUseMockMode(useMock: boolean) {
+    this.useMockMode = useMock;
   }
 }
 

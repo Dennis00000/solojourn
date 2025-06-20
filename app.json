@@ -1,21 +1,28 @@
 {
   "expo": {
-    "name": "bolt-expo-nativewind",
-    "slug": "bolt-expo-nativewind",
+    "name": "SoloJourn",
+    "slug": "solojourn-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#fff"
+      "backgroundColor": "#0EA5E9"
     },
-    "scheme": "myapp",
+    "scheme": "solojourn",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.bolt-expo-nativewind"
+      "bundleIdentifier": "com.solojourn.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#0EA5E9"
+      },
+      "package": "com.solojourn.app"
     },
     "web": {
       "bundler": "metro",
@@ -25,7 +32,22 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-location",
+      "expo-notifications",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share travel memories.",
+          "cameraPermission": "The app accesses your camera to let you capture travel moments."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "The app accesses your microphone for voice messages."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
