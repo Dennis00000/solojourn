@@ -79,22 +79,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="safety"
-        options={{
-          title: 'Safety',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.iconContainer, focused && styles.activeIconContainer]}>
-              <Ionicons 
-                name={focused ? "shield" : "shield-outline"} 
-                size={28} 
-                color={color}
-                style={[styles.icon, focused && styles.activeIcon]}
-              />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',

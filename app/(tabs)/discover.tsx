@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
+  Alert,
 } from 'react-native';
 import {
   Search,
@@ -22,6 +23,12 @@ import {
   Shield,
   Users,
   Heart,
+  Phone,
+  Flag,
+  ChevronRight,
+  Globe,
+  AlertTriangle,
+  FileText,
 } from 'lucide-react-native';
 import { SafeAreaView as SafeAreaViewRN } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,6 +45,20 @@ interface POI {
   price?: string;
   soloFriendly: boolean;
   addedBy: string;
+}
+
+interface SafetyTip {
+  id: string;
+  title: string;
+  description: string;
+  category: 'general' | 'communication' | 'health' | 'money';
+}
+
+interface EmergencyContact {
+  country: string;
+  police: string;
+  medical: string;
+  fire: string;
 }
 
 const mockPOIs: POI[] = [
@@ -92,6 +113,40 @@ const mockPOIs: POI[] = [
   },
 ];
 
+const safetyTips: SafetyTip[] = [
+  {
+    id: '1',
+    title: 'Share Your Itinerary',
+    description: 'Always share your travel plans with someone you trust. Include accommodation details, transportation, and planned activities.',
+    category: 'communication',
+  },
+  {
+    id: '2',
+    title: 'Keep Emergency Contacts Handy',
+    description: 'Save local emergency numbers and embassy contacts in your phone. Consider downloading offline maps.',
+    category: 'communication',
+  },
+  {
+    id: '3',
+    title: 'Trust Your Instincts',
+    description: 'If something doesn\'t feel right, remove yourself from the situation. Your safety is more important than being polite.',
+    category: 'general',
+  },
+  {
+    id: '4',
+    title: 'Secure Your Valuables',
+    description: 'Use hotel safes, money belts, and avoid displaying expensive items. Keep backup copies of important documents.',
+    category: 'money',
+  },
+];
+
+const emergencyContacts: EmergencyContact[] = [
+  { country: 'Thailand', police: '191', medical: '1669', fire: '199' },
+  { country: 'Japan', police: '110', medical: '119', fire: '119' },
+  { country: 'United Kingdom', police: '999', medical: '999', fire: '999' },
+  { country: 'Australia', police: '000', medical: '000', fire: '000' },
+];
+
 const topTravelers = [
   {
     id: '1',
@@ -134,6 +189,7 @@ export default function DiscoverScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [pois, setPois] = useState<POI[]>(mockPOIs);
+  const [selectedSafetyCategory, setSelectedSafetyCategory] = useState<string>('all');
 
   const filteredPOIs = pois.filter(poi => {
     const matchesSearch = poi.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -141,6 +197,28 @@ export default function DiscoverScreen() {
     const matchesCategory = selectedCategory === 'all' || poi.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleEmergencyCall = (number: string, country: string) => {
+    Alert.alert(
+      'Emergency Call',
+      `Call ${number} for emergency services in ${country}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Call', onPress: () => console.log(`Calling ${number}`) },
+      ]
+    );
+  };
+
+  const handleReportUser = () => {
+    Alert.alert(
+      'Report User or Content',
+      'This will help us keep the community safe. Please provide details about the issue.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Continue', onPress: () => console.log('Opening report form') },
+      ]
+    );
+  };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -210,17 +288,91 @@ export default function DiscoverScreen() {
     );
   };
 
+  const SafetyTipCard = ({ tip }: { tip: SafetyTip }) => (
+    <View style={styles.tipCard}>
+      <Text style={styles.tipTitle}>{tip.title}</Text>
+      <Text style={styles.tipDescription}>{tip.description}</Text>
+    </View>
+  );
+
+  const EmergencyContactCard = ({ contact }: { contact: EmergencyContact }) => (
+    <View style={styles.emergencyCard}>
+      <View style={styles.emergencyHeader}>
+        <Globe size={18} color="#EF4444" />
+        <Text style={styles.countryName}>{contact.country}</Text>
+      </View>
+      <View style={styles.emergencyNumbers}>
+        <TouchableOpacity 
+          style={styles.emergencyButton}
+          onPress={() => handleEmergencyCall(contact.police, contact.country)}
+        >
+          <Shield size={16} color="#EF4444" />
+          <Text style={styles.emergencyLabel}>Police</Text>
+          <Text style={styles.emergencyNumber}>{contact.police}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.emergencyButton}
+          onPress={() => handleEmergencyCall(contact.medical, contact.country)}
+        >
+          <Heart size={16} color="#EF4444" />
+          <Text style={styles.emergencyLabel}>Medical</Text>
+          <Text style={styles.emergencyNumber}>{contact.medical}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.emergencyButton}
+          onPress={() => handleEmergencyCall(contact.fire, contact.country)}
+        >
+          <AlertTriangle size={16} color="#EF4444" />
+          <Text style={styles.emergencyLabel}>Fire</Text>
+          <Text style={styles.emergencyNumber}>{contact.fire}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const CategoryButton = ({ title, icon: IconComponent, isSelected, onPress }: {
+    title: string;
+    icon: any;
+    isSelected: boolean;
+    onPress: () => void;
+  }) => (
+    <TouchableOpacity
+      style={[styles.categoryButton, isSelected && styles.selectedCategoryButton]}
+      onPress={onPress}
+    >
+      <IconComponent 
+        size={18} 
+        color={isSelected ? '#FFFFFF' : '#64748B'} 
+      />
+      <Text style={[
+        styles.categoryButtonText,
+        isSelected && styles.selectedCategoryButtonText
+      ]}>
+        {title}
+      </Text>
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaViewRN style={styles.container}>
       {/* Fixed Header */}
       <SafeAreaViewRN edges={['top']} style={styles.fixedHeader}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Discover</Text>
-          <TouchableOpacity style={styles.filterButton}>
-            <Filter size={20} color="#374151" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.filterButton}>
+              <Filter size={20} color="#374151" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.safetyButton}
+              onPress={handleReportUser}
+            >
+              <Shield size={20} color="#EF4444" />
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaViewRN>
+
       {/* Scrollable Content */}
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Search Bar */}
@@ -234,6 +386,26 @@ export default function DiscoverScreen() {
             placeholderTextColor="#9CA3AF"
           />
         </View>
+
+        {/* Safety Quick Actions */}
+        <View style={styles.safetyQuickActions}>
+          <Text style={styles.sectionTitle}>Safety First</Text>
+          <View style={styles.quickActions}>
+            <TouchableOpacity style={styles.quickActionButton}>
+              <Phone size={24} color="#FFFFFF" />
+              <Text style={styles.quickActionText}>Emergency</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickActionButton} onPress={handleReportUser}>
+              <Flag size={24} color="#FFFFFF" />
+              <Text style={styles.quickActionText}>Report</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quickActionButton}>
+              <MapPin size={24} color="#FFFFFF" />
+              <Text style={styles.quickActionText}>Share Location</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Categories */}
         <ScrollView 
           horizontal 
@@ -268,6 +440,59 @@ export default function DiscoverScreen() {
             );
           })}
         </ScrollView>
+
+        {/* Safety Tips Section - Only show when safety category is selected */}
+        {selectedCategory === 'safety' && (
+          <View style={styles.safetySection}>
+            <Text style={styles.sectionTitle}>Safety Tips</Text>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoriesContainer}
+              contentContainerStyle={styles.categoriesContent}
+            >
+              <CategoryButton
+                title="All"
+                icon={Shield}
+                isSelected={selectedSafetyCategory === 'all'}
+                onPress={() => setSelectedSafetyCategory('all')}
+              />
+              <CategoryButton
+                title="Communication"
+                icon={Phone}
+                isSelected={selectedSafetyCategory === 'communication'}
+                onPress={() => setSelectedSafetyCategory('communication')}
+              />
+              <CategoryButton
+                title="General"
+                icon={Users}
+                isSelected={selectedSafetyCategory === 'general'}
+                onPress={() => setSelectedSafetyCategory('general')}
+              />
+              <CategoryButton
+                title="Money"
+                icon={FileText}
+                isSelected={selectedSafetyCategory === 'money'}
+                onPress={() => setSelectedSafetyCategory('money')}
+              />
+            </ScrollView>
+
+            <View style={styles.tipsContainer}>
+              {safetyTips
+                .filter(tip => selectedSafetyCategory === 'all' || tip.category === selectedSafetyCategory)
+                .map((tip) => (
+                  <SafetyTipCard key={tip.id} tip={tip} />
+                ))}
+            </View>
+
+            {/* Emergency Contacts */}
+            <Text style={styles.sectionTitle}>Emergency Contacts</Text>
+            {emergencyContacts.map((contact, index) => (
+              <EmergencyContactCard key={index} contact={contact} />
+            ))}
+          </View>
+        )}
+
         {/* Interactive Map Placeholder */}
         <View style={styles.mapSectionContainer}>
           <Text style={styles.mapLabel}>🌍 Explore Locations</Text>
@@ -278,6 +503,7 @@ export default function DiscoverScreen() {
             <Text style={styles.mapPlaceholderSubtext}>Browse locations below</Text>
           </View>
         </View>
+
         {/* Top Travelers */}
         <View style={{ marginTop: 24, marginBottom: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 }}>
@@ -308,6 +534,7 @@ export default function DiscoverScreen() {
             ))}
           </ScrollView>
         </View>
+
         {/* POI List */}
         <ScrollView style={styles.poiList} showsVerticalScrollIndicator={false}>
           <View style={styles.listHeader}>
@@ -356,7 +583,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1F2937',
   },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   filterButton: {
+    padding: 8,
+  },
+  safetyButton: {
     padding: 8,
   },
   searchContainer: {
@@ -376,6 +610,35 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#374151',
+  },
+  safetyQuickActions: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 12,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickActionButton: {
+    flex: 1,
+    backgroundColor: '#EF4444',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    alignItems: 'center',
+    gap: 8,
+  },
+  quickActionText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   categoriesContainer: {
     marginBottom: 12,
@@ -401,10 +664,101 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
+  selectedCategoryButton: {
+    backgroundColor: '#0EA5E9',
+    borderColor: '#0EA5E9',
+  },
   categoryText: {
     fontSize: 12,
     color: '#64748B',
     fontWeight: '500',
+  },
+  categoryButtonText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  selectedCategoryButtonText: {
+    color: '#FFFFFF',
+  },
+  safetySection: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  tipsContainer: {
+    marginBottom: 20,
+  },
+  tipCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  tipTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  tipDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#64748B',
+  },
+  emergencyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  emergencyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  countryName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  emergencyNumbers: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  emergencyButton: {
+    flex: 1,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  emergencyLabel: {
+    fontSize: 11,
+    color: '#7F1D1D',
+    fontWeight: '500',
+  },
+  emergencyNumber: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#EF4444',
   },
   mapSectionContainer: {
     marginHorizontal: 20,
@@ -479,6 +833,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   poiImage: {
     width: '100%',
