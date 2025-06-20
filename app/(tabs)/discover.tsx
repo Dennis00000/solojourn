@@ -12,24 +12,7 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import {
-  Search,
-  MapPin,
-  Star,
-  Filter,
-  Bed,
-  Coffee,
-  Camera,
-  Shield,
-  Users,
-  Heart,
-  Phone,
-  Flag,
-  ChevronRight,
-  Globe,
-  AlertTriangle,
-  FileText,
-} from 'lucide-react-native';
+import { Search, MapPin, Star, Filter, Bed, Coffee, Camera, Shield, Users, Heart, Phone, Flag, ChevronRight, Globe, TriangleAlert as AlertTriangle, FileText } from 'lucide-react-native';
 import { SafeAreaView as SafeAreaViewRN } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
