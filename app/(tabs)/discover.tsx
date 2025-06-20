@@ -23,7 +23,6 @@ import {
   Users,
   Heart,
 } from 'lucide-react-native';
-import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView as SafeAreaViewRN } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -269,36 +268,15 @@ export default function DiscoverScreen() {
             );
           })}
         </ScrollView>
-        {/* Interactive Map */}
+        {/* Interactive Map Placeholder */}
         <View style={styles.mapSectionContainer}>
-          <Text style={styles.mapLabel}>🌍 Interactive Map</Text>
-          <Text style={styles.mapSubtext}>Tap pins to see details</Text>
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: 20,
-              longitude: 0,
-              latitudeDelta: 100,
-              longitudeDelta: 100,
-            }}
-            showsUserLocation={false}
-            showsMyLocationButton={false}
-            scrollEnabled={true}
-            zoomEnabled={true}
-          >
-            {/* Example markers for POIs */}
-            {filteredPOIs.map((poi) => (
-              <Marker
-                key={poi.id}
-                coordinate={{
-                  latitude: 20 + Math.random() * 40 - 20, // Placeholder: randomize for demo
-                  longitude: Math.random() * 360 - 180,
-                }}
-                title={poi.name}
-                description={poi.location}
-              />
-            ))}
-          </MapView>
+          <Text style={styles.mapLabel}>🌍 Explore Locations</Text>
+          <Text style={styles.mapSubtext}>Discover places shared by fellow travelers</Text>
+          <View style={styles.mapPlaceholder}>
+            <MapPin size={48} color="#0EA5E9" />
+            <Text style={styles.mapPlaceholderText}>Interactive map coming soon</Text>
+            <Text style={styles.mapPlaceholderSubtext}>Browse locations below</Text>
+          </View>
         </View>
         {/* Top Travelers */}
         <View style={{ marginTop: 24, marginBottom: 8 }}>
@@ -452,11 +430,27 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginBottom: 8,
   },
-  map: {
+  mapPlaceholder: {
     width: '100%',
     height: 140,
+    backgroundColor: '#F1F5F9',
     borderRadius: 14,
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed',
+  },
+  mapPlaceholderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 8,
+  },
+  mapPlaceholderSubtext: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 2,
   },
   poiList: {
     flex: 1,
