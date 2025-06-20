@@ -81,6 +81,7 @@ export default function FeedScreen() {
   const [viewedStories, setViewedStories] = useState<{ [id: string]: boolean }>({});
   const [storyProgress, setStoryProgress] = useState(0);
   const storyTimerRef = useRef<any>(null);
+  const [logoModalVisible, setLogoModalVisible] = useState(false);
 
   // Use real-time hooks
   const {
@@ -372,7 +373,11 @@ export default function FeedScreen() {
         />
         <View style={styles.headerRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <TouchableOpacity style={styles.headerTitleRow} activeOpacity={0.7}>
+            <TouchableOpacity 
+              style={styles.headerTitleRow} 
+              activeOpacity={0.7}
+              onPress={() => setLogoModalVisible(true)}
+            >
               <Text style={styles.headerTitle}>SoloJourn</Text>
             </TouchableOpacity>
           </View>
@@ -493,6 +498,85 @@ export default function FeedScreen() {
           <Ionicons name="add-circle" size={24} color="#FFFFFF" />
         </LinearGradient>
       </TouchableOpacity>
+
+      {/* Logo Modal */}
+      <Modal
+        visible={logoModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoModalVisible(false)}
+      >
+        <Pressable style={styles.logoModalOverlay} onPress={() => setLogoModalVisible(false)}>
+          <View style={styles.logoModalContent}>
+            <View style={styles.logoModalHeader}>
+              <View style={styles.logoContainer}>
+                <Ionicons name="airplane" size={48} color="#0EA5E9" />
+              </View>
+              <Text style={styles.logoModalTitle}>SoloJourn</Text>
+              <Text style={styles.logoModalSubtitle}>Your companion for safe solo travel</Text>
+            </View>
+
+            <View style={styles.logoModalStats}>
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>50K+</Text>
+                <Text style={styles.statLabel}>Solo Travelers</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>180+</Text>
+                <Text style={styles.statLabel}>Countries</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statNumber}>4.9★</Text>
+                <Text style={styles.statLabel}>Rating</Text>
+              </View>
+            </View>
+
+            <View style={styles.logoModalFeatures}>
+              <View style={styles.featureItem}>
+                <Ionicons name="shield-checkmark" size={20} color="#10B981" />
+                <Text style={styles.featureText}>Safety First</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="people" size={20} color="#8B5CF6" />
+                <Text style={styles.featureText}>Connect with Travelers</Text>
+              </View>
+              <View style={styles.featureItem}>
+                <Ionicons name="map" size={20} color="#F59E0B" />
+                <Text style={styles.featureText}>Discover Hidden Gems</Text>
+              </View>
+            </View>
+
+            <View style={styles.logoModalActions}>
+              <TouchableOpacity 
+                style={styles.logoActionButton}
+                onPress={() => {
+                  setLogoModalVisible(false);
+                  router.push('/premium');
+                }}
+              >
+                <LinearGradient colors={['#0EA5E9', '#0284C7']} style={styles.logoActionGradient}>
+                  <Ionicons name="trophy" size={16} color="#FFFFFF" />
+                  <Text style={styles.logoActionText}>Go Premium</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.logoSecondaryButton}
+                onPress={() => {
+                  setLogoModalVisible(false);
+                  router.push('/(tabs)/discover');
+                }}
+              >
+                <Text style={styles.logoSecondaryText}>Explore</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.logoModalVersion}>Version 1.0.0</Text>
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* Create Post Modal */}
       <Modal
@@ -945,6 +1029,148 @@ const styles = StyleSheet.create({
   loadMoreContainer: {
     alignItems: 'center',
     padding: 20,
+  },
+  // Logo Modal Styles
+  logoModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  logoModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 32,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  logoModalHeader: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F0F9FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#0EA5E9',
+  },
+  logoModalTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#0EA5E9',
+    marginBottom: 8,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Poppins-Bold',
+  },
+  logoModalSubtitle: {
+    fontSize: 16,
+    color: '#64748B',
+    textAlign: 'center',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Regular',
+  },
+  logoModalStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Bold',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Medium',
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: '#E2E8F0',
+  },
+  logoModalFeatures: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  featureText: {
+    fontSize: 14,
+    color: '#374151',
+    marginLeft: 12,
+    fontWeight: '500',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Medium',
+  },
+  logoModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+    marginBottom: 16,
+  },
+  logoActionButton: {
+    flex: 1,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  logoActionGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    gap: 8,
+  },
+  logoActionText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-SemiBold',
+  },
+  logoSecondaryButton: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoSecondaryText: {
+    color: '#64748B',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-SemiBold',
+  },
+  logoModalVersion: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Regular',
   },
 });
 
