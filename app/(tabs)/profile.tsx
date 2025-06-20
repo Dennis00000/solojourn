@@ -86,6 +86,7 @@ export default function ProfileScreen() {
   const [selectedTab, setSelectedTab] = useState<'posts' | 'saved' | 'itineraries'>('posts');
   const [travelLogs, setTravelLogs] = useState<TravelLog[]>(mockTravelLogs);
   const [editProfileVisible, setEditProfileVisible] = useState(false);
+  const [signOutModalVisible, setSignOutModalVisible] = useState(false);
   const [userProfile, setUserProfile] = useState({
     name: 'Emma Chen',
     bio: 'Solo traveler exploring the world one city at a time 📍 Digital nomad sharing authentic travel experiences and safety tips for fellow solo adventurers ✈️',
@@ -93,6 +94,7 @@ export default function ProfileScreen() {
     email: 'emma@example.com',
   });
   const [editedProfile, setEditedProfile] = useState(userProfile);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     loadUserProfile();
@@ -134,26 +136,34 @@ export default function ProfileScreen() {
     ));
   };
 
-  const handleSignOut = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await signOut();
-              router.replace('/auth');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
-            }
-          },
-        },
-      ]
-    );
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      // Clear all user data
+      await AsyncStorage.multiRemove([
+        'userToken',
+        'userName',
+        'userProfile',
+        'userPreferences',
+        'hasLaunched'
+      ]);
+      
+      // Clear cache
+      await storageService.clearCache();
+      
+      // Call auth service sign out
+      await signOut();
+      
+      setSignOutModalVisible(false);
+      
+      // Navigate to auth screen
+      router.replace('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      Alert.alert('Error', 'Failed to sign out. Please try again.');
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   const TravelLogCard = ({ log }: { log: TravelLog }) => (
@@ -309,7 +319,10 @@ export default function ProfileScreen() {
             >
               <Text style={styles.primaryButtonText}>Edit Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryButton} onPress={handleSignOut}>
+            <TouchableOpacity 
+              style={styles.signOutButton} 
+              onPress={() => setSignOutModalVisible(true)}
+            >
               <Ionicons name="log-out-outline" size={18} color="#EF4444" />
               <Text style={styles.signOutButtonText}>Sign Out</Text>
             </TouchableOpacity>
@@ -455,6 +468,51 @@ export default function ProfileScreen() {
           >
             <Text style={styles.modalCancelText}>Cancel</Text>
           </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Sign Out Confirmation Modal */}
+      <Modal
+        visible={signOutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSignOutModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setSignOutModalVisible(false)} />
+        <View style={styles.signOutModalContent}>
+          <View style={styles.signOutIconContainer}>
+            <Ionicons name="log-out-outline" size={48} color="#EF4444" />
+          </View>
+          
+          <Text style={styles.signOutModalTitle}>Sign Out</Text>
+          <Text style={styles.signOutModalMessage}>
+            Are you sure you want to sign out? You'll need to sign in again to access your account.
+          </Text>
+
+          <View style={styles.signOutModalButtons}>
+            <TouchableOpacity 
+              style={styles.signOutCancelButton}
+              onPress={() => setSignOutModalVisible(false)}
+              disabled={signingOut}
+            >
+              <Text style={styles.signOutCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.signOutConfirmButton, signingOut && styles.signOutConfirmButtonDisabled]}
+              onPress={handleSignOut}
+              disabled={signingOut}
+            >
+              {signingOut ? (
+                <View style={styles.signOutLoadingContainer}>
+                  <Ionicons name="hourglass-outline" size={16} color="#FFFFFF" />
+                  <Text style={styles.signOutConfirmText}>Signing Out...</Text>
+                </View>
+              ) : (
+                <Text style={styles.signOutConfirmText}>Sign Out</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
     </SafeAreaView>
@@ -623,14 +681,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Regular',
   },
-  secondaryButton: {
+  signOutButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#EF4444',
     paddingVertical: 12,
     borderRadius: 12,
@@ -926,5 +984,85 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Medium',
+  },
+  signOutModalContent: {
+    position: 'absolute',
+    top: '30%',
+    left: 20,
+    right: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  signOutIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FEF2F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  signOutModalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 12,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Bold',
+  },
+  signOutModalMessage: {
+    fontSize: 16,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-Regular',
+  },
+  signOutModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  signOutCancelButton: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  signOutCancelText: {
+    color: '#64748B',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-SemiBold',
+  },
+  signOutConfirmButton: {
+    flex: 1,
+    backgroundColor: '#EF4444',
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  signOutConfirmButtonDisabled: {
+    opacity: 0.7,
+  },
+  signOutConfirmText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Inter-SemiBold',
+  },
+  signOutLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });
